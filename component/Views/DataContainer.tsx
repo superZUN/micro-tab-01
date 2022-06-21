@@ -1,6 +1,6 @@
 import * as React from 'react';
-import styles from '/DataContainer.module.css';
-import QuickChart from '../DataContainer/QuickChart';
+import styles from './DataContainer.module.css';
+import QuickChart from './DataContainer/QuickChart';
 
 import 'handsontable/dist/handsontable.full.css';
 
@@ -9,7 +9,11 @@ import Handsontable from 'handsontable';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { decrement, increment } from '../../redux/counterSlice';
-import { initialize, updateData } from '../../redux/myDataSlice';
+import {
+  initialize,
+  updateData,
+  updateSelection,
+} from '../../redux/myDataSlice';
 
 // import { useSelector } from 'react-redux';
 
@@ -27,22 +31,28 @@ const DataContainer = () => {
     return false;
   };
 
+  const onAfterSelection = (r1,c1, r2,c2)=> {
+    dispatch(updateSelection({r1:r1,c1:c1,r2:r2,c2:c2}));
+	},
   return (
     <div id="hot-app">
-      <button>graph</button>
       <QuickChart />
-      <HotTable
-        data={mydata}
-        colHeaders={true}
-        rowHeaders={true}
-        // ref={hotTableComponent};;;;;[=]
-        beforeChange={onBeforeHotChange}
-        // width="100"
-        // height="500"
-        rowHeights={23}
-        colWidths={100}
-        licenseKey="non-commercial-and-evaluation"
-      />
+      <div styleName={styles.hotTable}>
+        <HotTable
+          data={mydata}
+          width= '100%'
+          height='50vh'
+          colHeaders={true}
+          rowHeaders={true}
+          beforeChange={onBeforeHotChange}
+          afterSelection={onAfterSelection}
+          rowHeights={23}
+          colWidths={100}
+          selectionMode="range" // 'single', 'range' or 'multiple',
+          licenseKey="non-commercial-and-evaluation"
+        />
+        
+      </div>
     </div>
   );
 };

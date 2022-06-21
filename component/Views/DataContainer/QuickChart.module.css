@@ -1,5 +1,9 @@
-.QuickGraph {
-  width: 100vw;
-  height: 30vh;
+.QuickChart {
+  width: 90vw;
   background-color: red;
+}
+
+.ChartBox {
+  width: 400px;
+  padding: 10px;
 }

@@ -1,7 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+import calculateCorrelation from 'calculate-correlation';
+
 export interface mydataState {
   myData: [];
+  selectedData: [];
 }
 
 const genInitData = (r: Number, c: number) => {
@@ -9,16 +12,19 @@ const genInitData = (r: Number, c: number) => {
   for (let i = 0; i < r; i++) {
     let row = [];
     for (let j = 0; j < c; j++) {
-      row.push(null);
+      j % 2 == 0
+        ? row.push(Math.random() * Math.random() * i * Math.sin(i))
+        : row.push(Math.random() * i * Math.sin(i));
     }
     arr.push(row);
   }
-  console.log(arr);
+  // console.log(arr);
   return arr;
 };
 
 const initialState: mydataState = {
-  myData: genInitData(100, 100),
+  myData: genInitData(1000, 26),
+  selectedData: [],
 };
 
 export const mydataSlice = createSlice({
@@ -26,22 +32,22 @@ export const mydataSlice = createSlice({
   initialState,
   reducers: {
     initialize: (state) => {
-      console.log('hi');
+      // console.log('hi');
       state.myData = [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
+        [1, 0, 0],
+        [2, 0, 0],
+        [3, 0, 0],
       ];
     },
     updateData: (state, action) => {
-      console.log('updateData', action);
+      // console.log('updateData', action);
       const newData = [...state.myData];
 
       action.payload.forEach(([row, column, oldValue, newValue]) => {
         let rows = newData.length;
         let cols = newData[0].length;
-        console.log('row:', row, rows);
-        console.log('col:', column, cols);
+        // console.log('row:', row, rows);
+        // console.log('col:', column, cols);
         if (row >= rows) {
           newData.push([]);
         }
@@ -49,37 +55,96 @@ export const mydataSlice = createSlice({
           for (let i = 0; i < newData.length; i++) newData[i].push(null);
         }
         newData[row][column] = newValue * 1;
-        console.log(newData);
+        // console.log(newData);
       });
 
       state.myData = newData;
     },
-    //     type: 'updateData',
-    //       dataChanges: changes
-    //     });
+    updateSelection: (state, action) => {
+      //afterSelection(row, column, row2, column2, preventScrolling, selectionLayerLevel)
 
-    //     return false;
-    //   }
+      let c1: number, c2: number, r1: number, r2: number;
+      const data = [...state.myData];
+      // console.log(data);
+      let selection = [];
+      state.selectedData = [];
 
-    //   const toggleReadOnly = event => {
-    //     dispatch({
-    //       type: 'updateReadOnly',
-    //       readOnly: event.target.checked
-    // case 'updateData':
-    //       const newData = [...state.data];
+      if (action.payload.r1 == -1) {
+        //컬럼 선택 시
+        // console.log('column selected');
+        c1 =
+          action.payload.c1 < action.payload.c2
+            ? action.payload.c1
+            : action.payload.c2;
+        c2 =
+          action.payload.c1 < action.payload.c2
+            ? action.payload.c2
+            : action.payload.c1;
+        r1 = 0;
+        r2 = action.payload.r2;
+      } else {
+        //영역 선택 시
+        c1 =
+          action.payload.c1 < action.payload.c2
+            ? action.payload.c1
+            : action.payload.c2;
+        c2 =
+          action.payload.c1 < action.payload.c2
+            ? action.payload.c2
+            : action.payload.c1;
+        r1 =
+          action.payload.r1 < action.payload.r2
+            ? action.payload.r1
+            : action.payload.r2;
+        r2 =
+          action.payload.r1 < action.payload.r2
+            ? action.payload.r2
+            : action.payload.r1;
+      }
 
-    //       action.dataChanges.forEach(([row, column, oldValue, newValue]) => {
-    //         newData[row][column] = newValue;
-    //       })
+      for (let c = c1; c <= c2; c++) {
+        let tmpRow = [];
+        for (let r = r1; r <= r2; r++) {
+          tmpRow.push(data[r][c]);
+        }
+        selection.push(tmpRow);
+      }
 
-    //       return {
-    //         ...state,
-    //         data: newData
-    //       }
+      //공통 State update
+      for (let i = 0; i <= c2 - c1; i++) {
+        let plotData = { type: 'histogram', data: selection[i] };
+        let plotHistogram = {
+          type: 'histogram',
+          xAxis: 1,
+          yAxis: 1,
+          baseSeries: 'pData' + i,
+
+          zIndex: -1,
+        };
+        let plotScatter = {
+          name: 'Data',
+          type: 'scatter',
+          data: selection[i],
+          id: 'pData' + i,
+          marker: {
+            radius: 1.5,
+          },
+        };
+        // state.selectedData.push(plotData);
+        state.selectedData.push(plotHistogram);
+        state.selectedData.push(plotScatter);
+
+        //2*5 이상일 때 상관계수 분석
+        if (selection.length >= 2 && selection[0].length >= 5) {
+          // console.log('correlation');
+          console.log(calculateCorrelation(selection[0], selection[1]));
+        }
+      }
+    },
   },
 });
 
 // Action creators are generated for each case reducer function
-export const { initialize, updateData } = mydataSlice.actions;
+export const { initialize, updateData, updateSelection } = mydataSlice.actions;
 
 export default mydataSlice.reducer;
